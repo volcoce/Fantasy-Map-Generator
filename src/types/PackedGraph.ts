@@ -2,9 +2,12 @@ import type { Quadtree } from "d3";
 import type { Burg } from "../modules/burgs-generator";
 import type { Culture } from "../modules/cultures-generator";
 import type { PackedGraphFeature } from "../modules/features";
+import type { IceElement } from "../modules/ice";
+import type { Marker } from "../modules/markers-generator";
 import type { Province } from "../modules/provinces-generator";
 import type { River } from "../modules/river-generator";
 import type { Route } from "../modules/routes-generator";
+import type { Religion } from "../modules/religions-generator";
 import type { State } from "../modules/states-generator";
 import type { Zone } from "../modules/zones-generator";
 
@@ -53,9 +56,9 @@ export interface PackedGraph {
   states: State[];
   cultures: Culture[];
   routes: Route[];
-  religions: any[];
+  religions: Religion[];
   zones: Zone[];
-  markers: any[];
-  ice: any[];
+  markers: Marker[];
+  ice: IceElement[];
   provinces: Province[];
 }

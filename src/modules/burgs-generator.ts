@@ -19,7 +19,7 @@ export interface Burg {
   removed?: boolean;
   population?: number;
   type?: string;
-  coa?: any;
+  coa?: { shield: string; [key: string]: unknown };
   citadel?: number;
   plaza?: number;
   walls?: number;

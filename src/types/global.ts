@@ -1,21 +1,56 @@
 import type { Selection } from "d3";
 import type { NameBase } from "../modules/names-generator";
+import type { Route } from "../modules/routes-generator";
+import type { Grid } from "../utils/graphUtils";
 import type { PackedGraph } from "./PackedGraph";
+
+export interface MapOptions {
+  military: Array<{
+    icon: string;
+    name: string;
+    rural: number;
+    urban: number;
+    crew: number;
+    power: number;
+    type: string;
+    separate: number;
+  }>;
+  year: number;
+  era: string;
+  eraShort: string;
+}
+
+export interface Note {
+  id: string;
+  name: string;
+  legend: string;
+}
+
+export interface HeightmapTemplate {
+  name: string;
+  template?: string;
+  probability?: number;
+}
 
 declare global {
   var seed: string;
   var pack: PackedGraph;
-  var grid: any;
+  var grid: Grid;
   var graphHeight: number;
   var graphWidth: number;
   var TIME: boolean;
   var WARN: boolean;
   var ERROR: boolean;
   var DEBUG: { stateLabels?: boolean; [key: string]: boolean | undefined };
-  var options: any;
+  var options: MapOptions;
 
-  var heightmapTemplates: any;
-  var Routes: any;
+  var heightmapTemplates: Record<string, HeightmapTemplate>;
+  var Routes: {
+    getRoute: (from: number, to: number) => Route | undefined;
+    isConnected: (cellId: number) => boolean;
+    isCrossroad: (cellId: number) => boolean;
+    buildLinks: (routes: Route[]) => Record<number, Record<number, number>>;
+  };
   var populationRate: number;
   var urbanDensity: number;
   var urbanization: number;
@@ -64,7 +99,7 @@ declare global {
     icons: string[][];
     cost: number[];
   };
-  var notes: any[];
+  var notes: Note[];
   var style: {
     burgLabels: { [key: string]: { [key: string]: string } };
     burgIcons: { [key: string]: { [key: string]: string } };
@@ -73,9 +108,9 @@ declare global {
   };
 
   var layerIsOn: (layerId: string) => boolean;
-  var drawRoute: (route: any) => void;
+  var drawRoute: (route: Route) => void;
   var invokeActiveZooming: () => void;
-  var FlatQueue: any;
+  var FlatQueue: new () => { length: number; push(item: number, priority: number): void; pop(): number; peekValue(): number };
 
   var tip: (
     message: string,
@@ -85,7 +120,7 @@ declare global {
   ) => void;
   var locked: (settingId: string) => boolean;
   var unlock: (settingId: string) => void;
-  var $: (selector: any) => any;
+  var $: <T extends Element = HTMLElement>(selector: string) => T | null;
   var scale: number;
   var changeFont: () => void;
   var getFriendlyHeight: (coords: [number, number]) => string;

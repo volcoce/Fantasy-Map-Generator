@@ -1,5 +1,36 @@
 import polylabel from "polylabel";
+import type { Vertices } from "../modules/voronoi";
+import type { PackedGraph } from "../types/PackedGraph";
 import { rn } from "./numberUtils";
+
+interface IsolineOptions {
+  polygons?: boolean;
+  fill?: boolean;
+  halo?: boolean;
+  waterGap?: boolean;
+}
+
+interface IsolineData {
+  polygons?: [number, number][][];
+  fill?: string;
+  halo?: string;
+  waterGap?: string;
+}
+
+type IsolinesMap = Record<string | number, IsolineData>;
+
+interface GraphLike {
+  cells: {
+    i: number[] | Uint32Array;
+    c: number[][];
+    v: number[][];
+    b: boolean[] | number[];
+    h?: number[] | Uint8Array;
+    f?: number[] | Uint16Array;
+  };
+  vertices: Vertices;
+  features: Array<{ type: string; shoreline?: number[] }>;
+}
 
 /**
  * Generates SVG path data for filling a shape defined by a chain of vertices.
@@ -7,7 +38,7 @@ import { rn } from "./numberUtils";
  * @param {number[]} vertexChain - An array of vertex IDs defining the shape.
  * @returns {string} SVG path data for the filled shape.
  */
-const getFillPath = (vertices: any, vertexChain: number[]) => {
+const getFillPath = (vertices: Vertices, vertexChain: number[]) => {
   const points = vertexChain.map(vertexId => vertices.p[vertexId]);
   const firstPoint = points.shift();
   return `M${firstPoint} L${points.join(" ")} Z`;
@@ -20,7 +51,7 @@ const getFillPath = (vertices: any, vertexChain: number[]) => {
  * @param {(vertexId: number) => boolean} discontinue - A function that determines if the path should discontinue at a vertex.
  * @returns {string} SVG path data for the border.
  */
-const getBorderPath = (vertices: any, vertexChain: number[], discontinue: (vertexId: number) => boolean) => {
+const getBorderPath = (vertices: Vertices, vertexChain: number[], discontinue: (vertexId: number) => boolean) => {
   let discontinued = true;
   let lastOperation = "";
   const path = vertexChain.map(vertexId => {
@@ -76,17 +107,12 @@ const restorePath = (exit: number, start: number, from: number[]) => {
  * @returns {object} An object containing isolines for each type based on the specified options.
  */
 export const getIsolines = (
-  graph: any,
-  getType: (cellId: number) => any,
-  options: {
-    polygons?: boolean;
-    fill?: boolean;
-    halo?: boolean;
-    waterGap?: boolean;
-  } = { polygons: false, fill: false, halo: false, waterGap: false }
-): any => {
+  graph: GraphLike,
+  getType: (cellId: number) => string | number | null | undefined,
+  options: IsolineOptions = { polygons: false, fill: false, halo: false, waterGap: false }
+): IsolinesMap => {
   const { cells, vertices } = graph;
-  const isolines: any = {};
+  const isolines: IsolinesMap = {};
 
   const checkedCells = new Uint8Array(cells.i.length);
   const addToChecked = (cellId: number) => {
@@ -126,7 +152,7 @@ export const getIsolines = (
 
   return isolines;
 
-  function addIsolineTo(type: any, vertices: any, vertexChain: number[], isolines: any, options: any) {
+  function addIsolineTo(type: string | number, vertices: Vertices, vertexChain: number[], isolines: IsolinesMap, options: IsolineOptions) {
     if (!isolines[type]) isolines[type] = {};
 
     if (options.polygons) {
@@ -159,7 +185,7 @@ export const getIsolines = (
  * @param {object} packedGraph - The packed graph object containing cells and vertices.
  * @returns {string} SVG path data for the border of the shape.
  */
-export const getVertexPath = (cellsArray: number[], packedGraph: any = {}) => {
+export const getVertexPath = (cellsArray: number[], packedGraph: PackedGraph) => {
   const { cells, vertices } = packedGraph;
 
   const cellsObj = Object.fromEntries(cellsArray.map(cellId => [cellId, true]));
@@ -208,12 +234,12 @@ export const getVertexPath = (cellsArray: number[], packedGraph: any = {}) => {
  * @param {(cellId: number) => any} getType - A function that returns the type of a cell given its ID.
  * @returns {object} An object mapping each type to its pole of inaccessibility coordinates [x, y].
  */
-export const getPolesOfInaccessibility = (graph: any, getType: (cellId: number) => any) => {
+export const getPolesOfInaccessibility = (graph: GraphLike, getType: (cellId: number) => string | number | null | undefined) => {
   const isolines = getIsolines(graph, getType, { polygons: true });
 
   const poles = Object.entries(isolines).map(([id, isoline]) => {
-    const multiPolygon = (isoline as any).polygons.sort((a: any, b: any) => b.length - a.length);
-    const [x, y] = polylabel(multiPolygon, 20);
+    const multiPolygon = (isoline.polygons ?? []).sort((a, b) => b.length - a.length);
+    const [x, y] = polylabel(multiPolygon as [number, number][][], 20);
     return [id, [rn(x), rn(y)]];
   });
 
@@ -237,7 +263,7 @@ export const connectVertices = ({
   addToChecked,
   closeRing
 }: {
-  vertices: any;
+  vertices: Vertices;
   startingVertex: number;
   ofSameType: (cellId: number) => boolean;
   addToChecked?: (cellId: number) => void;
@@ -294,7 +320,7 @@ export const findPath = (
   start: number,
   isExit: (id: number) => boolean,
   getCost: (current: number, next: number) => number,
-  packedGraph: any = {}
+  packedGraph: PackedGraph
 ): number[] | null => {
   if (isExit(start)) return null;
 
@@ -327,10 +353,17 @@ export const findPath = (
   return null;
 };
 
+interface FlatQueueInstance {
+  length: number;
+  push(item: number, priority: number): void;
+  pop(): number;
+  peekValue(): number;
+}
+
 declare global {
   interface Window {
     ERROR: boolean;
-    FlatQueue: any;
+    FlatQueue: new () => FlatQueueInstance;
 
     getIsolines: typeof getIsolines;
     getPolesOfInaccessibility: typeof getPolesOfInaccessibility;

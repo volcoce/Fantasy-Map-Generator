@@ -3,6 +3,10 @@ import { min } from "d3";
 import { clipPoly, getGridPolygon, getIsolines, lerp, minmax, normalize, P, ra, rand, rn } from "../utils";
 import type { Point } from "./voronoi";
 
+export type IceElement =
+  | { i: number; points: Point[] | number[][]; type: "glacier" }
+  | { i: number; points: Point[] | number[][]; type: "iceberg"; cellId: number; size: number };
+
 declare global {
   var Ice: IceModule;
 }

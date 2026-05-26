@@ -215,7 +215,7 @@ export const generateDate = (from: number = 100, to: number = 1000): string => {
  * @param decimals - Number of decimal places (default is 2)
  * @returns Longitude value
  */
-export const getLongitude = (x: number, mapCoordinates: any, graphWidth: number, decimals: number = 2): number => {
+export const getLongitude = (x: number, mapCoordinates: { lonW: number; lonT: number }, graphWidth: number, decimals: number = 2): number => {
   return rn(mapCoordinates.lonW + (x / graphWidth) * mapCoordinates.lonT, decimals);
 };
 
@@ -227,7 +227,7 @@ export const getLongitude = (x: number, mapCoordinates: any, graphWidth: number,
  * @param decimals - Number of decimal places (default is 2)
  * @returns Latitude value
  */
-export const getLatitude = (y: number, mapCoordinates: any, graphHeight: number, decimals: number = 2): number => {
+export const getLatitude = (y: number, mapCoordinates: { latN: number; latT: number }, graphHeight: number, decimals: number = 2): number => {
   return rn(mapCoordinates.latN - (y / graphHeight) * mapCoordinates.latT, decimals);
 };
 
@@ -244,7 +244,7 @@ export const getLatitude = (y: number, mapCoordinates: any, graphHeight: number,
 export const getCoordinates = (
   x: number,
   y: number,
-  mapCoordinates: any,
+  mapCoordinates: { lonW: number; lonT: number; latN: number; latT: number },
   graphWidth: number,
   graphHeight: number,
   decimals: number = 2
